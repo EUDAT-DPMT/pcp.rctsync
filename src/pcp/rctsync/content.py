@@ -78,8 +78,8 @@ def main(app):
 
     print "Done"
 
-# As this script lives in your source tree, then we need to use this trick so that
+# As this script lives in your source tree, we need to use this trick so that
 # five.grok, which scans all modules, does not try to execute the script while
-# modules are being loaded on the start-up
+# modules are being loaded on start-up
 if "app" in locals():
     main(app)
