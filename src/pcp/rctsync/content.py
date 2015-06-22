@@ -6,12 +6,7 @@
 #  cd <your-buildout-root-dir>
 #  bin/instance run src/pcp.rctsync/src/pcp/rctsync/content.py
 #
-#  reads source information from data/rct_dump_20150609.json
-#  
-#  The SITE_ID is hard coded as 'pcp'
-
-FILE_NAME = 'data/rct_dump_20150609.json'
-SITE_ID = site_id = 'pcp'
+#  run with --help to see available options
 
 from Products.PlonePAS.utils import cleanId
 from pcp.rctsync import utils
@@ -54,9 +49,11 @@ def preparedata(values):
     return data.copy()
 
 def main(app):
-    site = utils.getSite(app, site_id)
+    argparser = utils.getArgParser()
+    args = argparser.parse_args()
+    site = utils.getSite(app, args.site_id, args.admin_id)
     targetfolder = site.projects
-    rct_projects = utils.getData(FILE_NAME, 'rct.project')
+    rct_projects = utils.getData(args.filename, 'rct.project')
 
     for pk, values in rct_projects.items():
         id = prepareid(values)
@@ -73,9 +70,12 @@ def main(app):
         targetfolder[id].reindexObject()
         print "Updated %s in the projects folder" % id
 
-    import transaction
-    transaction.commit()
-
+    if not args.dry:
+        import transaction
+        transaction.commit()
+    else:
+        print "dry run; not committing anything"
+            
     print "Done"
 
 # As this script lives in your source tree, we need to use this trick so that

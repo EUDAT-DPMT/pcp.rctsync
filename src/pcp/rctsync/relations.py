@@ -4,11 +4,9 @@
 # script to be invoked via
 #
 #  cd <your-buildout-root-dir>
-#  bin/instance run src/pcp.rctsync/src/pcp/rctsync/relations.py
+#  bin/instance run src/pcp.rctsync/src/pcp/rctsync/relations.py [options]
 #  
-#  The SITE_ID is hard coded as 'pcp'
-
-SITE_ID = site_id = 'pcp'
+#  run with --help to see available options
 
 from Products.PlonePAS.utils import cleanId
 from pcp.rctsync import utils
@@ -74,12 +72,17 @@ def relate_communities(site, people_map):
                     
 
 def main(app):
-    site = utils.getSite(app, site_id)
+    argparser = utils.getArgParser()
+    args = argparser.parse_args()
+    site = utils.getSite(app, args.site_id, args.admin_id)
     people_map = map_people(site)
     relate_communities(site, people_map)
 
-    import transaction
-    transaction.commit()
+    if not args.dry:
+        import transaction
+        transaction.commit()
+    else:
+        print "dry run; not committing anything"
 
 # As this script lives in your source tree, we need to use this trick so that
 # five.grok, which scans all modules, does not try to execute the script while
