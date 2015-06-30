@@ -32,7 +32,7 @@ def getLogger():
     logger = logging.getLogger('rctsync')
     logger.setLevel(logging.DEBUG)
     # create file handler which logs even debug messages
-    fh = logging.FileHandler('rctsync.log')
+    fh = logging.FileHandler('var/log/rctsync.log')
     fh.setLevel(logging.DEBUG)
     # create console handler with a higher log level
     ch = logging.StreamHandler()
