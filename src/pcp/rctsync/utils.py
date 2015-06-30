@@ -1,4 +1,5 @@
 import json
+import logging
 import argparse
 from collections import defaultdict
 
@@ -26,7 +27,27 @@ def getArgParser():
                         help="name of the script invoked. Set automatically. It is here"\
                         "to keep the 'argparse' module happy")
     return parser
-    
+
+def getLogger():
+    logger = logging.getLogger('rctsync')
+    logger.setLevel(logging.DEBUG)
+    # create file handler which logs even debug messages
+    fh = logging.FileHandler('rctsync.log')
+    fh.setLevel(logging.DEBUG)
+    # create console handler with a higher log level
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.WARNING)
+    # create formatter and add it to the handlers
+    file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    console_formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
+    fh.setFormatter(file_formatter)
+    ch.setFormatter(console_formatter)
+    # add the handlers to the logger
+    logger.addHandler(fh)
+    logger.addHandler(ch)
+
+    return logger
+
 
 def getSite(app, site_id, admin_id):
     app = makerequest.makerequest(app)
