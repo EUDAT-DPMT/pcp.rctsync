@@ -28,11 +28,11 @@ def getArgParser():
                         "to keep the 'argparse' module happy")
     return parser
 
-def getLogger():
+def getLogger(logfilename='var/log/rctsync.log'):
     logger = logging.getLogger('rctsync')
     logger.setLevel(logging.DEBUG)
     # create file handler which logs even debug messages
-    fh = logging.FileHandler('var/log/rctsync.log')
+    fh = logging.FileHandler(logfilename)
     fh.setLevel(logging.DEBUG)
     # create console handler with a higher log level
     ch = logging.StreamHandler()
@@ -79,3 +79,12 @@ def getData(path, model=None):
         return rct_data.copy()
     else:
         return rct_data[model].copy()
+
+def email2userpk(data):
+    """return mapping to enable user_pk lookup by email.
+    Assumes 'data' to hold the 'auth.user' data"""
+    result = {}
+    for pk, values in data.items():
+        email = values['fields']['email']
+        result[email] = pk
+    return result.copy()
