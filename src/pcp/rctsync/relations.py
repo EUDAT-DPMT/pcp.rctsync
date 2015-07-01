@@ -12,16 +12,18 @@ from Products.PlonePAS.utils import cleanId
 from pcp.rctsync import utils
 import logging
 
-def uid_map(site, target_path, ptype):
+def uid_maps(site, target_path, ptype):
 
-    logger = logging.getLogger('rctsync.uid_map')
+    logger = logging.getLogger('rctsync.uid_maps')
     mapping = {}
-
+    contact_mapping = {}
+    user_mapping = {}
+    
     try:
         target = site[target_path]
     except KeyError:
          logger.error("no target folder '%s' found" % target_path)
-         return mapping.copy() 
+         return None
 
     for content in target.contentValues():
         logger.debug(content.Title())
@@ -30,25 +32,69 @@ def uid_map(site, target_path, ptype):
             continue
         additional = content.getAdditional()
         rct_pk = None
+        rct_contact_pk = None
+        rct_user_pk = None
+        rct_user_inferred = None
 
         for item in additional:
             if item['key'] == 'rct_pk':
                 rct_pk = item['value']
-                message = "%s has rct_pk %s" % (content.Title(), rct_pk)
+                message = "%s has rct_pk %s" % (content.Title(), rct_contact_pk)
                 logger.debug(message)
                 break
+            # special case for user mappings
+            if item['key'] == 'rct_contact_pk':
+                rct_contact_pk = item['value']
+                message = "%s has rct_contact_pk %s" % (content.Title(), rct_contact_pk)
+                logger.debug(message)
+            if item['key'] == 'rct_user_pk':
+                rct_user_pk = item['value']
+                message = "%s has rct_user_pk %s" % (content.Title(), rct_contact_pk)
+                logger.debug(message)
+            if item['key'] == 'rct_user_inferred':
+                rct_user_inferred = item['value']
+                message = "%s has rct_user_inferred %s" % (content.Title(), rct_contact_pk)
+                logger.debug(message)
 
-        if rct_pk is not None:
+        if rct_pk not in [None, 'None']:
             pk = int(rct_pk)
             mapping[pk] = dict(uid=content.UID(), name=content.Title())
             message = "mapping %s to %s (%s)" % (pk, content.UID(), content.Title())
             logger.debug(message)
         else:
-            logger.warning("'%s (%s)' has no corresponding 'rct_pk'" % (content.Title(), content.absolute_url()))    
+            logger.debug("'%s (%s)' has no corresponding 'rct_pk'" % (content.Title(), content.absolute_url()))
 
-    return mapping.copy()
-            
-def relate_communities(site, people_map):
+        if rct_contact_pk not in [None, 'None']:
+            pk = int(rct_contact_pk)
+            contact_mapping[pk] = dict(uid=content.UID(), name=content.Title())
+            message = "contact mapping %s to %s (%s)" % (pk, content.UID(), content.Title())
+            logger.debug(message)
+        else:
+            logger.debug("'%s (%s)' has no corresponding 'rct_contact_pk'" % (content.Title(), content.absolute_url()))    
+
+        if rct_user_pk or rct_user_inferred:
+            try:
+                upk = int(rct_user_pk)
+            except TypeError, ValueError:
+                upk = 0
+            try:
+                ipk = int(rct_user_inferred)
+            except TypeError, ValueError:
+                ipk = 0
+            pk = upk or ipk
+            if pk:
+                user_mapping[pk] = dict(uid=content.UID(), name=content.Title())
+                message = "user mapping %s to %s (%s)" % (pk, content.UID(), content.Title())
+                logger.debug(message)
+        else:
+            logger.debug("'%s (%s)' has no corresponding 'rct_user_pk'" % (content.Title(), content.absolute_url()))    
+
+    if mapping:
+        return mapping.copy()
+    else:
+        return contact_mapping.copy(), user_mapping.copy()
+    
+def relate_communities(site, contact_map, user_map):
     logger = logging.getLogger('rctsync.relate_communities')
     for community in site.communities.contentValues():
         if community.portal_type != 'Community':
@@ -71,14 +117,14 @@ def relate_communities(site, people_map):
         if representative_pk not in [None, 'None']:
             pk = int(representative_pk)
             try:
-                community.setRepresentative(people_map[pk]['uid'])
+                community.setRepresentative(contact_map[pk]['uid'])
                 community.reindexObject()
                 logger.info("setting '%s' (%s) as representative for '%s'", 
-                            people_map[pk]['name'],
+                            contact_map[pk]['name'],
                             pk,
                             community.Title())
             except KeyError:
-                logger.error( "no person with pk '%s' found." % pk)
+                logger.error( "no person with pk '%s' found in contact_map." % pk)
 
         else:
             message = "'%s' has no representative set (set to %s)" % (community.Title(), 
@@ -94,12 +140,12 @@ def relate_communities(site, people_map):
             uids = []
             for pk in pks:
                 try:
-                    uids.append(people_map[pk]['uid'])
-                    logger.info("Adding '%s' (%s) as admin to '%s' " % (people_map[pk]['name'],
+                    uids.append(user_map[pk]['uid'])
+                    logger.info("Adding '%s' (%s) as admin to '%s' " % (user_map[pk]['name'],
                                                                         pk, 
                                                                         community.Title()))
                 except KeyError:
-                    logger.error("no person with pk '%s' found." % pk)
+                    logger.error("no person with pk '%s' found in user_map." % pk)
 
             community.setAdmins(uids)
             community.reindexObject()
@@ -108,7 +154,7 @@ def relate_communities(site, people_map):
                                                               admin_pks)
             logger.warning(message)
 
-def relate_projects(site, people_map, community_map):
+def relate_projects(site, contact_map, community_map):
     logger = logging.getLogger('rctsync.relate_projects')
     for project in site.projects.contentValues():
         if project.portal_type != 'Project':
@@ -131,10 +177,10 @@ def relate_projects(site, people_map, community_map):
         if contact_pk not in [None, 'None']:
             pk = int(contact_pk)
             try:
-                project.setCommunity_contact(people_map[pk]['uid'])
+                project.setCommunity_contact(contact_map[pk]['uid'])
                 project.reindexObject()
                 logger.info("setting '%s' (%s) as community contact for '%s'", 
-                            people_map[pk]['name'],
+                            contact_map[pk]['name'],
                             pk,
                             project.Title())
             except KeyError:
@@ -142,7 +188,7 @@ def relate_projects(site, people_map, community_map):
 
         else:
             message = "'%s' has no 'community contact' set (set to %s)" % (project.Title(), 
-                                                                         contact_pk)
+                                                                           contact_pk)
             logger.warning(message)
 
         if community_pk not in [None, 'None']:
@@ -171,16 +217,16 @@ def main(app):
     logger.info("Got site '%s' as '%s'" % (args.site_id, args.admin_id))
 
     logger.info("Mapping out people")
-    people_map = uid_map(site, 'people', 'Person')
+    contact_map, user_map = uid_maps(site, 'people', 'Person')
 
     logger.info("Mapping out communities")
-    community_map = uid_map(site, 'communities', 'Community')
+    community_map = uid_maps(site, 'communities', 'Community')
 
     logger.info("relating communities to people")
-    relate_communities(site, people_map)
+    relate_communities(site, contact_map, user_map)
 
     logger.info("relating projects to communities and people")
-    relate_projects(site, people_map, community_map)
+    relate_projects(site, contact_map, community_map)
 
     if not args.dry:
         logger.info("committing changes to db")

@@ -117,9 +117,14 @@ def preparedata(values, rct_users, email2userpk):
         rct_users[userpk]['covered'] = True
         logger.info("Updating '%s' with user data" % title)
     elif email2userpk.has_key(email):
-        username = rct_users[email2userpk[email]]['fields']['username']
+        pk = email2userpk[email]
+        username = rct_users[pk]['fields']['username']
         additional.append({'key':'rct_username',
                            'value':username,
+                           },
+                          )
+        additional.append({'key':'rct_user_inferred',
+                           'value':pk,
                            },
                           )
         rct_users[email2userpk[email]]['covered'] = True
