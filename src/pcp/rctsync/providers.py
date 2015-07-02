@@ -72,13 +72,16 @@ def preparedata(values, site, contact_map, user_map, community_map):
         message = "Linking '%s' to '%s' as secondary community" % (community_map[pk]['name'], title)
         logger.debug(message)
         cs_uids.append(community_map[pk]['uid'])
-    
+
+    osvocab = utils.getOspk2name()
+    sos = [osvocab[index] for index in fields['supported_os']]
+    data['supported_os'] = tuple(sos)  
+
     data['title'] = title
     data['description'] = fields['description']
     data['url'] = fields['website']
     data['address'] = {"country":fields['country']}
     data['getaccount'] = fields['getaccount']
-    #data['supported_os'] = fields['supported_os']  # first needs to be mapped to controlled vocab
     data['committed_cores'] = fields['committed_cores']
     data['committed_disk'] = fields['committed_disk']
     data['committed_tape'] = fields['committed_tape']
@@ -105,7 +108,7 @@ def preparedata(values, site, contact_map, user_map, community_map):
             logger.error("No user with pk=%s found (contact for %s)"%(cpk,title))
     data['admins'] = admin_uids
     data['communities_primary'] = cp_uids
-    data['communities_seconary'] = cs_uids
+    data['communities_secondary'] = cs_uids
     
     return data.copy()
 

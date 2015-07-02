@@ -88,3 +88,13 @@ def email2userpk(data):
         email = values['fields']['email']
         result[email] = pk
     return result.copy()
+
+def getOspk2name():
+    ospk2name = {}
+    ospk2name[1] = "SLES - SuSE Linux Enterprise Server from Novell"
+    ospk2name[2] = "RHEL - Red Hat Enterprise Linux from Red Hat"
+    ospk2name[3] = "Ubuntu - Ubuntu Server from Canonical"
+    ospk2name[4] = "SL - Scientific Linux"
+    ospk2name[5] = "Debian - Debian"
+    ospk2name[6] = "CentOS - The Community Enterprise Operating System"
+    return ospk2name.copy()
