@@ -39,7 +39,7 @@ def uid_maps(site, target_path, ptype):
         for item in additional:
             if item['key'] == 'rct_pk':
                 rct_pk = item['value']
-                message = "%s has rct_pk %s" % (content.Title(), rct_contact_pk)
+                message = "%s has rct_pk %s" % (content.Title(), rct_pk)
                 logger.debug(message)
                 break
             # special case for user mappings
@@ -49,11 +49,11 @@ def uid_maps(site, target_path, ptype):
                 logger.debug(message)
             if item['key'] == 'rct_user_pk':
                 rct_user_pk = item['value']
-                message = "%s has rct_user_pk %s" % (content.Title(), rct_contact_pk)
+                message = "%s has rct_user_pk %s" % (content.Title(), rct_user_pk)
                 logger.debug(message)
             if item['key'] == 'rct_user_inferred':
                 rct_user_inferred = item['value']
-                message = "%s has rct_user_inferred %s" % (content.Title(), rct_contact_pk)
+                message = "%s has rct_user_inferred %s" % (content.Title(), rct_user_inferred)
                 logger.debug(message)
 
         if rct_pk not in [None, 'None']:
